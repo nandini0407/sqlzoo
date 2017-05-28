@@ -154,7 +154,7 @@ def cl_to_lr_by_name
   JOIN
     stops stopb ON (b.stop_id = stopb.id)
   WHERE
-    stopa.name = 'Craiglockhart'
+    stopa.name = 'Craiglockhart' AND stopb.name = 'London Road'
   SQL
 end
 
@@ -178,6 +178,29 @@ def craiglockhart_and_tollcross
   # Give the company and num of the services that connect stops
   # 'Craiglockhart' and 'Tollcross'
   execute(<<-SQL)
+  SELECT
+    start_route.company,
+    start_route.num
+  FROM
+    routes AS start_route
+  JOIN
+    routes AS end_route ON (start_route.company = end_route.company AND start_route.num = end_route.num)
+  WHERE
+    start_route.stop_id = (
+      SELECT
+        id
+      FROM
+        stops
+      WHERE
+        name = 'Craiglockhart'
+    ) AND end_route.stop_id = (
+      SELECT
+        id
+      FROM
+        stops
+      WHERE
+        name = 'Tollcross'
+    )
   SQL
 end
 
@@ -186,6 +209,25 @@ def start_at_craiglockhart
   # by taking one bus, including 'Craiglockhart' itself. Include the stop name,
   # as well as the company and bus no. of the relevant service.
   execute(<<-SQL)
+    SELECT
+      end_stops.name,
+      end_route.company,
+      end_route.num
+    FROM
+      routes AS start_route
+    JOIN
+      routes AS end_route ON start_route.company = end_route.company AND start_route.num = end_route.num
+    JOIN
+      stops AS end_stops ON end_route.stop_id = end_stops.id
+    WHERE
+      start_route.stop_id = (
+        SELECT
+          id
+        FROM
+          stops
+        WHERE
+          name = 'Craiglockhart'
+      )
   SQL
 end
 
@@ -194,5 +236,23 @@ def craiglockhart_to_sighthill
   # Sighthill. Show the bus no. and company for the first bus, the name of the
   # stop for the transfer, and the bus no. and company for the second bus.
   execute(<<-SQL)
+    SELECT
+      distinct a.num, a.company, stopb.name, c.num, c.company
+    from
+      routes as a
+    join
+      stops as stopa on a.stop_id = stopa.id
+    join
+      routes as b on a.company = b.company and a.num =b.num
+    join
+      stops as stopb on b.stop_id = stopb.id
+    join
+      routes as c on c.stop_id = stopb.id
+    join
+      routes as d on c.company = d.company and c.num = d.num
+    join
+      stops as stopd on d.stop_id = stopd.id
+    where
+      stopa.name = 'Craiglockhart' and stopd.name = 'Sighthill'
   SQL
 end
